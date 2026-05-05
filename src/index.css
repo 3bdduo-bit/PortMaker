@@ -1,0 +1,85 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0d0d17;
+  --surface: #15151f;
+  --surface2: #1d1d2e;
+  --border: #2c2c42;
+  --accent: #8b5cf6;
+  --accent2: #38bdf8;
+  --text: #e4e4f0;
+  --muted: #9494b2;
+  --radius: 14px;
+  --grad: linear-gradient(135deg, #8b5cf6, #38bdf8);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased; /* Safari/Chrome only — intentional */
+  font-smooth: always; /* Firefox fallback */
+}
+
+a {
+  color: var(--accent2);
+  text-decoration: none;
+}
+
+input,
+textarea,
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #44445a;
+}
+
+/* Quoted attribute selectors (CSS spec requirement) */
+input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--accent);
+}
+
+input[type="number"] {
+  appearance: textfield;        /* Standard */
+  -moz-appearance: textfield;   /* Firefox legacy */
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
