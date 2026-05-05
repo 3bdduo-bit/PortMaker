@@ -31,7 +31,15 @@ export default function App() {
   useEffect(() => {
     const onHash = () => setRouteState(getRouteFromHash())
     window.addEventListener('hashchange', onHash)
-    return () => window.removeEventListener('hashchange', onHash)
+
+    // Disable right-click context menu
+    const handleContextMenu = (e) => e.preventDefault()
+    document.addEventListener('contextmenu', handleContextMenu)
+
+    return () => {
+      window.removeEventListener('hashchange', onHash)
+      document.removeEventListener('contextmenu', handleContextMenu)
+    }
   }, [])
 
   if (route === 'portfolio' && data) return <PortfolioPage data={data} />
