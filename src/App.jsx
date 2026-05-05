@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { decompressFromEncodedURIComponent } from 'lz-string'
 import MakerPage from './pages/MakerPage'
 import PortfolioPage from './pages/PortfolioPage'
 
@@ -13,6 +14,18 @@ import PortfolioPage from './pages/PortfolioPage'
  */
 function getRouteFromHash() {
   const hash = window.location.hash
+  const compactMatch = hash.match(/^#p=([^&]+)&d=(.+)$/)
+  if (compactMatch) {
+    const compressed = compactMatch[2]
+    try {
+      const json = decompressFromEncodedURIComponent(compressed)
+      if (!json) return { route: 'error', data: null }
+      const data = JSON.parse(json)
+      return { route: 'portfolio', data }
+    } catch {
+      return { route: 'error', data: null }
+    }
+  }
   if (hash.startsWith('#portfolio=')) {
     const encoded = hash.slice('#portfolio='.length)
     try {

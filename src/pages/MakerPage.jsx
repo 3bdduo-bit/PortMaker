@@ -1,4 +1,5 @@
 import{useState,useRef,useCallback}from'react'
+import{compressToEncodedURIComponent}from'lz-string'
 import s from'./MakerPage.module.css'
 
 const THEMES=[
@@ -16,6 +17,7 @@ const mkExp =()=>({id:_id++,role:'',company:'',period:'',desc:''})
 const mkEdu =()=>({id:_id++,degree:'',institution:'',year:'',desc:''})
 const mkSvc =()=>({id:_id++,icon:'⚡',title:'',desc:''})
 const mkTes =()=>({id:_id++,name:'',role:'',text:'',avatar:''})
+const slugify=v=>v.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'portfolio'
 
 function Field({label,hint,children}){
   return(
@@ -134,8 +136,10 @@ export default function MakerPage(){
       layout:{sectionSpacing,fontFamily,primaryColor},
       theme,
     }
-    const enc=btoa(unescape(encodeURIComponent(JSON.stringify(data))))
-    const url=`${window.location.origin}${window.location.pathname}#portfolio=${enc}`
+    const shortId=Math.random().toString(36).slice(2,8)
+    const userSlug=slugify(name)
+    const compressed=compressToEncodedURIComponent(JSON.stringify(data))
+    const url=`${window.location.origin}${window.location.pathname}#p=${userSlug}-${shortId}&d=${compressed}`
     setLink(url)
     setTimeout(()=>resultRef.current?.scrollIntoView({behavior:'smooth'}),50)
   }
