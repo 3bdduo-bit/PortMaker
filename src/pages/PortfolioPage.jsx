@@ -1,4 +1,4 @@
-import{useEffect,useRef,useState,useCallback}from'react'
+import{useEffect,useRef,useState}from'react'
 import s from'./PortfolioPage.module.css'
 
 const THEMES={
@@ -100,7 +100,6 @@ function Testimonials({items}){
 
 export default function PortfolioPage({data}){
   const[scrollPct,setScrollPct]=useState(0)
-  const[showTop,setShowTop]=useState(false)
   const[statsActive,setStatsActive]=useState(false)
   const statsRef=useRef(null)
   const makerUrl=window.location.origin+window.location.pathname
@@ -111,7 +110,6 @@ export default function PortfolioPage({data}){
       const doc=document.documentElement
       const pct=(doc.scrollTop/(doc.scrollHeight-doc.clientHeight))*100
       setScrollPct(pct)
-      setShowTop(doc.scrollTop>400)
     }
     window.addEventListener('scroll',onScroll,{passive:true})
     return()=>window.removeEventListener('scroll',onScroll)
@@ -144,9 +142,23 @@ export default function PortfolioPage({data}){
   }
 
   const t=THEMES[data.theme]||THEMES.violet
+  const layout=data.layout||{}
   const hasStats=data.stats&&Object.values(data.stats).some(v=>v)
-  const hasSocials=data.links&&Object.values(data.links).some(v=>v)
+  const hasSocials=(data.links&&Object.values(data.links).some(v=>v))||(data.freelance&&Object.values(data.freelance).some(v=>v))
   const waLink=data.whatsapp?`https://wa.me/${data.whatsapp.replace(/\D/g,'')}?text=Hi%2C%20I%20found%20your%20portfolio!`:null
+  const resumeHref=data.cvFile?.data||data.resumeUrl
+  const resumeLabel=data.cvFile?.name?'Attached CV':'Resume'
+  const spacingClass={
+    small:s.sectionSmall,
+    medium:'',
+    large:s.sectionLarge,
+  }[layout.sectionSpacing||'medium']
+  const fontClass={
+    sans:'',
+    serif:s.fontSerif,
+    mono:s.fontMono,
+  }[layout.fontFamily||'sans']
+  const dynamicStyle=layout.primaryColor?{'--pA1':layout.primaryColor}:undefined
 
   const socials=[
     data.links?.github    &&{href:data.links.github,   icon:'🐙',label:'GitHub'},
@@ -155,6 +167,9 @@ export default function PortfolioPage({data}){
     data.links?.website   &&{href:data.links.website,  icon:'🌐',label:'Website'},
     data.links?.instagram &&{href:data.links.instagram,icon:'📸',label:'Instagram'},
     data.links?.youtube   &&{href:data.links.youtube,  icon:'▶️',label:'YouTube'},
+    data.freelance?.upwork&&{href:data.freelance.upwork,icon:'🟢',label:'Upwork'},
+    data.freelance?.fiverr&&{href:data.freelance.fiverr,icon:'🟩',label:'Fiverr'},
+    data.freelance?.freelancer&&{href:data.freelance.freelancer,icon:'💠',label:'Freelancer'},
   ].filter(Boolean)
 
   /* Nav sections */
@@ -169,7 +184,7 @@ export default function PortfolioPage({data}){
   ].filter(Boolean)
 
   return(
-    <div className={`${s.page} ${t.cls}`}>
+    <div className={`${s.page} ${t.cls} ${fontClass}`} style={dynamicStyle}>
       {/* SCROLL PROGRESS */}
       <div className={s.progressBar} style={{width:`${scrollPct}%`}}/>
 
@@ -182,8 +197,8 @@ export default function PortfolioPage({data}){
             ))}
           </div>
           <div className={s.navActions}>
-            {data.resumeUrl&&(
-              <a href={data.resumeUrl} target="_blank" rel="noopener noreferrer" className={s.navCv}>⬇ Resume</a>
+            {resumeHref&&(
+              <a href={resumeHref} download={data.cvFile?.name||undefined} target="_blank" rel="noopener noreferrer" className={s.navCv}>⬇ {resumeLabel}</a>
             )}
           </div>
         </div>
@@ -208,7 +223,7 @@ export default function PortfolioPage({data}){
           <div className={s.heroButtons}>
             {waLink&&<a href={waLink} target="_blank" rel="noopener noreferrer" className={s.waBtn}>💬 WhatsApp Me</a>}
             {data.email&&<a href={`mailto:${data.email}`} className={s.emailBtnHero}>✉️ Email Me</a>}
-            {data.resumeUrl&&<a href={data.resumeUrl} target="_blank" rel="noopener noreferrer" className={s.cvBtnHero}>⬇ Download CV</a>}
+            {resumeHref&&<a href={resumeHref} download={data.cvFile?.name||undefined} target="_blank" rel="noopener noreferrer" className={s.cvBtnHero}>⬇ Download CV</a>}
           </div>
           {socials.length>0&&(
             <div className={s.socialRow}>
@@ -226,7 +241,7 @@ export default function PortfolioPage({data}){
         {/* STATS */}
         {hasStats&&(
           <div ref={statsRef} id="stats">
-            <Sec label="Stats">
+            <Sec label="Stats" className={spacingClass}>
               <div className={s.statsGrid}>
                 {data.stats.yearsExp   &&<StatItem value={data.stats.yearsExp}    suffix="+" label="Years of Experience" active={statsActive}/>}
                 {data.stats.projects   &&<StatItem value={data.stats.projects}    suffix="+" label="Projects Completed"  active={statsActive}/>}
@@ -239,7 +254,7 @@ export default function PortfolioPage({data}){
 
         {/* SKILLS */}
         {data.skills?.length>0&&(
-          <Sec id="skills" label="Skills">
+          <Sec id="skills" label="Skills" className={spacingClass}>
             <div className={s.skillsGrid}>
               {data.skills.map((sk,i)=><span key={i} className={s.skillTag}>{sk}</span>)}
             </div>
@@ -248,7 +263,7 @@ export default function PortfolioPage({data}){
 
         {/* EXPERIENCE */}
         {data.experiences?.length>0&&(
-          <Sec id="experience" label="Experience">
+          <Sec id="experience" label="Experience" className={spacingClass}>
             <div className={s.timeline}>
               {data.experiences.map((ex,i)=>(
                 <div key={i} className={s.tlItem}>
@@ -269,7 +284,7 @@ export default function PortfolioPage({data}){
 
         {/* EDUCATION */}
         {data.educations?.length>0&&(
-          <Sec id="education" label="Education">
+          <Sec id="education" label="Education" className={spacingClass}>
             <div className={s.timeline}>
               {data.educations.map((ed,i)=>(
                 <div key={i} className={s.tlItem}>
@@ -290,7 +305,7 @@ export default function PortfolioPage({data}){
 
         {/* PROJECTS */}
         {data.projects?.length>0&&(
-          <Sec id="projects" label="Projects">
+          <Sec id="projects" label="Projects" className={spacingClass}>
             {data.projects.filter(p=>p.featured).length>0&&(
               <>
                 <div className={s.projSubLabel}>⭐ Featured</div>
@@ -314,7 +329,7 @@ export default function PortfolioPage({data}){
 
         {/* SERVICES */}
         {data.services?.length>0&&(
-          <Sec id="services" label="Services">
+          <Sec id="services" label="Services" className={spacingClass}>
             <div className={s.servicesGrid}>
               {data.services.map((sv,i)=>(
                 <div key={i} className={s.serviceCard}>
@@ -329,21 +344,21 @@ export default function PortfolioPage({data}){
 
         {/* TESTIMONIALS */}
         {data.testimonials?.length>0&&(
-          <Sec id="testimonials" label="Testimonials">
+          <Sec id="testimonials" label="Testimonials" className={spacingClass}>
             <Testimonials items={data.testimonials}/>
           </Sec>
         )}
 
         {/* CONTACT */}
         {(data.email||waLink||hasSocials)&&(
-          <Sec id="contact" label="Contact">
+          <Sec id="contact" label="Contact" className={spacingClass}>
             <div className={s.contactCard}>
               <h3>Let's Work Together</h3>
               <p>Have a project in mind? I'd love to hear from you!</p>
               <div className={s.contactBtns}>
                 {data.email&&<a href={`mailto:${data.email}`} className={s.emailBtn}>✉️ Send Email</a>}
                 {waLink&&<a href={waLink} target="_blank" rel="noopener noreferrer" className={s.waContactBtn}>💬 WhatsApp</a>}
-                {data.resumeUrl&&<a href={data.resumeUrl} target="_blank" rel="noopener noreferrer" className={s.cvContactBtn}>⬇ Download CV</a>}
+                {resumeHref&&<a href={resumeHref} download={data.cvFile?.name||undefined} target="_blank" rel="noopener noreferrer" className={s.cvContactBtn}>⬇ Download CV</a>}
               </div>
               {socials.length>0&&(
                 <div className={s.socialRow} style={{marginTop:'1.5rem'}}>
@@ -372,6 +387,7 @@ function ProjCard({p}){
   return(
     <div className={`${s.projCard} ${p.featured?s.projFeatured:''}`}>
       {p.featured&&<div className={s.featuredBadge}>⭐ Featured</div>}
+      {p.image&&<img src={p.image} alt={p.name} className={s.projImage}/>}
       <div className={s.projName}>{p.name}</div>
       {p.desc&&<p className={s.projDesc}>{p.desc}</p>}
       {p.tech&&(

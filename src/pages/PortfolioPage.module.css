@@ -5,6 +5,8 @@
   --pGrad:linear-gradient(135deg,var(--pA1),var(--pA2));
   background:var(--pBg);color:var(--pText);font-family:'Inter',sans-serif;min-height:100vh;
 }
+.fontSerif{font-family:Georgia,'Times New Roman',serif}
+.fontMono{font-family:'Fira Code','Consolas','Courier New',monospace}
 .rose    {--pA1:#f43f5e;--pA2:#fb923c}
 .emerald {--pA1:#10b981;--pA2:#38bdf8}
 .gold    {--pA1:#f59e0b;--pA2:#ec4899}
@@ -55,6 +57,8 @@
 /* CONTAINER & SECTIONS */
 .container{max-width:940px;margin:0 auto;padding:0 1.5rem 5rem}
 .section{margin-bottom:4rem;opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+.sectionSmall{margin-bottom:2.3rem}
+.sectionLarge{margin-bottom:5.5rem}
 .visible{opacity:1;transform:translateY(0)}
 .secHeader{display:flex;align-items:center;gap:.8rem;margin-bottom:2rem}
 .secLine{flex:1;height:1px;background:var(--pBorder)}
@@ -100,6 +104,7 @@
 .projFeatured{border-color:rgba(139,92,246,.4);box-shadow:0 4px 24px rgba(139,92,246,.08)}
 .featuredBadge{position:absolute;top:.8rem;right:.8rem;background:var(--pGrad);color:#fff;border-radius:999px;font-size:.7rem;font-weight:700;padding:.2rem .65rem}
 .projName{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:.5rem;position:relative}
+.projImage{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid var(--pBorder);margin-bottom:.9rem;position:relative}
 .projDesc{font-size:.88rem;color:var(--pMuted);line-height:1.7;margin-bottom:1rem;position:relative}
 .projTech{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1rem;position:relative}
 .techChip{background:var(--pSurf2);border:1px solid var(--pBorder);border-radius:6px;padding:.18rem .55rem;font-size:.75rem;color:var(--pMuted)}

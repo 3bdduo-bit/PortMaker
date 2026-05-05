@@ -11,7 +11,7 @@ const THEMES=[
 ]
 const EMOJIS=['🎨','💻','🚀','⚡','🛠️','📱','🌐','📊','✍️','🔧','💡','🎯','📈','🤝','🔒','☁️','🎤','📷','🎵','🏆','🖥️','📐','🧩','🔍']
 let _id=0
-const mkProj=()=>({id:_id++,name:'',url:'',github:'',desc:'',tech:'',featured:false})
+const mkProj=()=>({id:_id++,name:'',url:'',github:'',desc:'',tech:'',image:'',featured:false})
 const mkExp =()=>({id:_id++,role:'',company:'',period:'',desc:''})
 const mkEdu =()=>({id:_id++,degree:'',institution:'',year:'',desc:''})
 const mkSvc =()=>({id:_id++,icon:'⚡',title:'',desc:''})
@@ -45,6 +45,10 @@ export default function MakerPage(){
   const[avatarOk,setAvatarOk]=useState(false)
   const[whatsapp,setWhatsapp]=useState('')
   const[resumeUrl,setResumeUrl]=useState('')
+  const[cvFile,setCvFile]=useState(null)
+  const[upwork,setUpwork]=useState('')
+  const[fiverr,setFiverr]=useState('')
+  const[freelancer,setFreelancer]=useState('')
   const[yearsExp,setYearsExp]=useState('')
   const[projCount,setProjCount]=useState('')
   const[clients,setClients]=useState('')
@@ -64,6 +68,9 @@ export default function MakerPage(){
   const[instagram,setInstagram]=useState('')
   const[youtube,setYoutube]=useState('')
   const[theme,setTheme]=useState('violet')
+  const[sectionSpacing,setSectionSpacing]=useState('medium')
+  const[fontFamily,setFontFamily]=useState('sans')
+  const[primaryColor,setPrimaryColor]=useState('#8b5cf6')
   const[link,setLink]=useState('')
   const[copied,setCopied]=useState(false)
   const resultRef=useRef(null)
@@ -77,6 +84,32 @@ export default function MakerPage(){
   const rmSkill=i=>setSkills(p=>p.filter((_,j)=>j!==i))
   const upd=(set,id,f,v)=>set(p=>p.map(x=>x.id===id?{...x,[f]:v}:x))
   const rm=(set,id)=>set(p=>p.filter(x=>x.id!==id))
+  const toDataUrl=(file,cb)=>{
+    const reader=new FileReader()
+    reader.onload=e=>cb(e.target?.result||'')
+    reader.readAsDataURL(file)
+  }
+
+  const onAvatarUpload=e=>{
+    const file=e.target.files?.[0]
+    if(!file)return
+    toDataUrl(file,(data)=>{
+      setAvatar(data)
+      setAvatarOk(true)
+    })
+  }
+
+  const onCvUpload=e=>{
+    const file=e.target.files?.[0]
+    if(!file)return
+    toDataUrl(file,(data)=>setCvFile({name:file.name,data}))
+  }
+
+  const onProjectImageUpload=(id,e)=>{
+    const file=e.target.files?.[0]
+    if(!file)return
+    toDataUrl(file,(data)=>upd(setProjects,id,'image',data))
+  }
 
   const generate=()=>{
     if(!name.trim()||!bio.trim()){alert('Please fill in at least your Name and Bio.');return}
@@ -84,14 +117,21 @@ export default function MakerPage(){
       name:name.trim(),title:jobTitle.trim(),bio:bio.trim(),
       location:location.trim(),email:email.trim(),avatar:avatar.trim(),
       whatsapp:whatsapp.trim(),resumeUrl:resumeUrl.trim(),
+      cvFile,
+      freelance:{
+        upwork:upwork.trim(),
+        fiverr:fiverr.trim(),
+        freelancer:freelancer.trim(),
+      },
       stats:{yearsExp:yearsExp||null,projects:projCount||null,clients:clients||null,satisfaction:satisfaction||null},
       skills,
       experiences:experiences.filter(e=>e.role.trim()||e.company.trim()).map(e=>({role:e.role.trim(),company:e.company.trim(),period:e.period.trim(),desc:e.desc.trim()})),
       educations:educations.filter(e=>e.degree.trim()||e.institution.trim()).map(e=>({degree:e.degree.trim(),institution:e.institution.trim(),year:e.year.trim(),desc:e.desc.trim()})),
-      projects:projects.filter(p=>p.name.trim()).map(p=>({name:p.name.trim(),url:p.url.trim(),github:p.github.trim(),desc:p.desc.trim(),tech:p.tech.trim(),featured:p.featured})),
+      projects:projects.filter(p=>p.name.trim()).map(p=>({name:p.name.trim(),url:p.url.trim(),github:p.github.trim(),desc:p.desc.trim(),tech:p.tech.trim(),image:p.image,featured:p.featured})),
       services:services.filter(sv=>sv.title.trim()).map(sv=>({icon:sv.icon,title:sv.title.trim(),desc:sv.desc.trim()})),
       testimonials:testimonials.filter(t=>t.name.trim()&&t.text.trim()).map(t=>({name:t.name.trim(),role:t.role.trim(),text:t.text.trim(),avatar:t.avatar.trim()})),
       links:{github:github.trim(),linkedin:linkedin.trim(),twitter:twitter.trim(),website:website.trim(),instagram:instagram.trim(),youtube:youtube.trim()},
+      layout:{sectionSpacing,fontFamily,primaryColor},
       theme,
     }
     const enc=btoa(unescape(encodeURIComponent(JSON.stringify(data))))
@@ -135,14 +175,36 @@ export default function MakerPage(){
             <Field label="WhatsApp Number" hint="Include country code e.g. +20 123 456 7890">
               <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} placeholder="+20 123 456 7890"/>
             </Field>
-            <Field label="Resume / CV Link" hint="Google Drive, Dropbox, or direct PDF link">
+            <Field label="Resume / CV Link (optional)" hint="Google Drive, Dropbox, or direct PDF link">
               <input value={resumeUrl} onChange={e=>setResumeUrl(e.target.value)} placeholder="https://drive.google.com/..."/>
             </Field>
           </div>
-          <Field label="Avatar URL (optional)">
-            <input value={avatar} onChange={e=>{setAvatar(e.target.value);setAvatarOk(false)}} placeholder="https://..."/>
-            {avatar&&<img src={avatar} alt="preview" className={s.avatarPreview} style={{display:avatarOk?'block':'none'}} onLoad={()=>setAvatarOk(true)} onError={()=>setAvatarOk(false)}/>}
-          </Field>
+          <div className={s.row}>
+            <Field label="Avatar URL (optional)">
+              <input value={avatar} onChange={e=>{setAvatar(e.target.value);setAvatarOk(false)}} placeholder="https://..."/>
+            </Field>
+            <Field label="Upload Profile Picture">
+              <input type="file" accept="image/*" onChange={onAvatarUpload}/>
+            </Field>
+          </div>
+          <div className={s.row}>
+            <Field label="Upload CV File (PDF/DOC)">
+              <input type="file" accept=".pdf,.doc,.docx" onChange={onCvUpload}/>
+              {cvFile&&<small className={s.hint}>Attached: {cvFile.name}</small>}
+            </Field>
+            <Field label="Upwork Profile">
+              <input value={upwork} onChange={e=>setUpwork(e.target.value)} placeholder="https://upwork.com/freelancers/..."/>
+            </Field>
+          </div>
+          <div className={s.row}>
+            <Field label="Fiverr Profile">
+              <input value={fiverr} onChange={e=>setFiverr(e.target.value)} placeholder="https://fiverr.com/..."/>
+            </Field>
+            <Field label="Freelancer Profile">
+              <input value={freelancer} onChange={e=>setFreelancer(e.target.value)} placeholder="https://freelancer.com/u/..."/>
+            </Field>
+          </div>
+          {avatar&&<img src={avatar} alt="preview" className={s.avatarPreview} style={{display:avatarOk?'block':'none'}} onLoad={()=>setAvatarOk(true)} onError={()=>setAvatarOk(false)}/>}
         </Card>
 
         {/* STATS */}
@@ -214,6 +276,10 @@ export default function MakerPage(){
               <Field label="GitHub Repository"><input value={p.github} onChange={e=>upd(setProjects,p.id,'github',e.target.value)} placeholder="https://github.com/user/repo"/></Field>
               <Field label="Description"><textarea value={p.desc} onChange={e=>upd(setProjects,p.id,'desc',e.target.value)} placeholder="What does this project do?" style={{minHeight:'65px'}}/></Field>
               <Field label="Tech Stack (comma-separated)"><input value={p.tech} onChange={e=>upd(setProjects,p.id,'tech',e.target.value)} placeholder="React, Node.js, MongoDB"/></Field>
+              <Field label="Project Image">
+                <input type="file" accept="image/*" onChange={e=>onProjectImageUpload(p.id,e)}/>
+                {p.image&&<img src={p.image} alt={`${p.name||'Project'} preview`} style={{marginTop:'.6rem',width:'100%',maxWidth:'220px',height:'120px',objectFit:'cover',borderRadius:'8px',border:'1px solid rgba(255,255,255,.15)'}}/>}
+              </Field>
               <label className={s.checkLabel}>
                 <input type="checkbox" checked={p.featured} onChange={e=>upd(setProjects,p.id,'featured',e.target.checked)}/>
                 ⭐ Mark as Featured Project
@@ -289,6 +355,29 @@ export default function MakerPage(){
               </div>
             ))}
           </div>
+        </Card>
+
+        {/* LAYOUT */}
+        <Card icon="🧱" title="Body & Layout Options">
+          <div className={s.row}>
+            <Field label="Section Spacing">
+              <select value={sectionSpacing} onChange={e=>setSectionSpacing(e.target.value)}>
+                <option value="small">Compact</option>
+                <option value="medium">Standard</option>
+                <option value="large">Spacious</option>
+              </select>
+            </Field>
+            <Field label="Font Style">
+              <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)}>
+                <option value="sans">Modern Sans</option>
+                <option value="serif">Classic Serif</option>
+                <option value="mono">Technical Mono</option>
+              </select>
+            </Field>
+          </div>
+          <Field label="Primary Color">
+            <input type="color" value={primaryColor} onChange={e=>setPrimaryColor(e.target.value)} style={{height:'44px'}}/>
+          </Field>
         </Card>
 
         <button className={s.generateBtn} onClick={generate}>✨ Generate My Portfolio Link</button>
