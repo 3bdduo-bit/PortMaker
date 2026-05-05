@@ -168,8 +168,9 @@ export default function PortfolioPage({data}){
     data.links?.instagram &&{href:data.links.instagram,icon:'📸',label:'Instagram'},
     data.links?.youtube   &&{href:data.links.youtube,  icon:'▶️',label:'YouTube'},
     data.freelance?.upwork&&{href:data.freelance.upwork,icon:'🟢',label:'Upwork'},
-    data.freelance?.fiverr&&{href:data.freelance.fiverr,icon:'🟩',label:'Fiverr'},
     data.freelance?.freelancer&&{href:data.freelance.freelancer,icon:'💠',label:'Freelancer'},
+    data.freelance?.mostaql&&{href:data.freelance.mostaql,icon:'🟠',label:'Mostaql'},
+    data.freelance?.fiveamsat&&{href:data.freelance.fiveamsat,icon:'🟤',label:'5amsat'},
   ].filter(Boolean)
 
   /* Nav sections */

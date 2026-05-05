@@ -18,6 +18,7 @@ const mkEdu =()=>({id:_id++,degree:'',institution:'',year:'',desc:''})
 const mkSvc =()=>({id:_id++,icon:'⚡',title:'',desc:''})
 const mkTes =()=>({id:_id++,name:'',role:'',text:'',avatar:''})
 const slugify=v=>v.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'portfolio'
+const isDataUrl=v=>typeof v==='string'&&v.startsWith('data:')
 
 function Field({label,hint,children}){
   return(
@@ -49,8 +50,9 @@ export default function MakerPage(){
   const[resumeUrl,setResumeUrl]=useState('')
   const[cvFile,setCvFile]=useState(null)
   const[upwork,setUpwork]=useState('')
-  const[fiverr,setFiverr]=useState('')
   const[freelancer,setFreelancer]=useState('')
+  const[mostaql,setMostaql]=useState('')
+  const[fiveamsat,setFiveamsat]=useState('')
   const[yearsExp,setYearsExp]=useState('')
   const[projCount,setProjCount]=useState('')
   const[clients,setClients]=useState('')
@@ -122,8 +124,9 @@ export default function MakerPage(){
       cvFile,
       freelance:{
         upwork:upwork.trim(),
-        fiverr:fiverr.trim(),
         freelancer:freelancer.trim(),
+        mostaql:mostaql.trim(),
+        fiveamsat:fiveamsat.trim(),
       },
       stats:{yearsExp:yearsExp||null,projects:projCount||null,clients:clients||null,satisfaction:satisfaction||null},
       skills,
@@ -136,9 +139,20 @@ export default function MakerPage(){
       layout:{sectionSpacing,fontFamily,primaryColor},
       theme,
     }
+    const compactData={
+      ...data,
+      // keep links compact by excluding heavy uploaded blobs
+      avatar:isDataUrl(data.avatar)?'':data.avatar,
+      cvFile:null,
+      projects:data.projects.map(p=>({
+        ...p,
+        image:isDataUrl(p.image)?'':p.image,
+      })),
+    }
+
     const shortId=Math.random().toString(36).slice(2,8)
     const userSlug=slugify(name)
-    const compressed=compressToEncodedURIComponent(JSON.stringify(data))
+    const compressed=compressToEncodedURIComponent(JSON.stringify(compactData))
     const url=`${window.location.origin}${window.location.pathname}#p=${userSlug}-${shortId}&d=${compressed}`
     setLink(url)
     setTimeout(()=>resultRef.current?.scrollIntoView({behavior:'smooth'}),50)
@@ -201,11 +215,16 @@ export default function MakerPage(){
             </Field>
           </div>
           <div className={s.row}>
-            <Field label="Fiverr Profile">
-              <input value={fiverr} onChange={e=>setFiverr(e.target.value)} placeholder="https://fiverr.com/..."/>
-            </Field>
             <Field label="Freelancer Profile">
               <input value={freelancer} onChange={e=>setFreelancer(e.target.value)} placeholder="https://freelancer.com/u/..."/>
+            </Field>
+            <Field label="Mostaql Profile">
+              <input value={mostaql} onChange={e=>setMostaql(e.target.value)} placeholder="https://mostaql.com/u/..."/>
+            </Field>
+          </div>
+          <div className={s.row}>
+            <Field label="5amsat Profile">
+              <input value={fiveamsat} onChange={e=>setFiveamsat(e.target.value)} placeholder="https://khamsat.com/user/..."/>
             </Field>
           </div>
           {avatar&&<img src={avatar} alt="preview" className={s.avatarPreview} style={{display:avatarOk?'block':'none'}} onLoad={()=>setAvatarOk(true)} onError={()=>setAvatarOk(false)}/>}
@@ -391,6 +410,7 @@ export default function MakerPage(){
             <div className={s.resultIcon}>🎉</div>
             <h3>Your Portfolio is Ready!</h3>
             <p>Share this link anywhere — LinkedIn bio, email signature, Twitter, anywhere!</p>
+            <p className={s.hint}>For shorter links, uploaded image/CV files are not embedded. Use URL fields for assets you want visible in shared portfolio.</p>
             <div className={s.linkRow}>
               <div className={s.linkDisplay}>{link}</div>
               <button className={s.copyBtn} onClick={copy} style={copied?{background:'#10b981'}:{}}>
