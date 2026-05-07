@@ -55,9 +55,32 @@ export default function App() {
     const handleContextMenu = (e) => e.preventDefault()
     document.addEventListener('contextmenu', handleContextMenu)
 
+    // Disable DevTools shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+    const handleKeyDown = (e) => {
+      if (
+        e.key === 'F12' || 
+        e.keyCode === 123 ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) ||
+        (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85))
+      ) {
+        e.preventDefault()
+        return false
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+
+    // Clear console continuously if they somehow open it
+    const clearConsole = setInterval(() => {
+      console.clear()
+    }, 1000)
+
     return () => {
       window.removeEventListener('hashchange', onHash)
       document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('keydown', handleKeyDown)
+      clearInterval(clearConsole)
     }
   }, [])
 

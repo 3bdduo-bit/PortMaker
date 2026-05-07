@@ -10,13 +10,16 @@ const THEMES=[
   {id:'midnight',label:'Midnight Blue',preview:'linear-gradient(135deg,#3b82f6,#8b5cf6)'},
   {id:'white', label:'Clean Light',    preview:'linear-gradient(135deg,#f1f5f9,#e2e8f0)',border:'1px solid #cbd5e1'},
 ]
-const EMOJIS=['🎨','💻','🚀','⚡','🛠️','📱','🌐','📊','✍️','🔧','💡','🎯','📈','🤝','🔒','☁️','🎤','📷','🎵','🏆','🖥️','📐','🧩','🔍']
+const EMOJIS=['🎨','💻','🚀','⚡','🛠️','📱','🌐','📊','✍️','🔧','💡','🎯','📈','🤝','🔒','☁️','🎤','📷','🎵','🏆','🖥️','📐','🧩','🔍','📚','🎓','🏆','🏅','🧠','💡']
 let _id=0
 const mkProj=()=>({id:_id++,name:'',url:'',github:'',desc:'',tech:'',image:'',featured:false})
 const mkExp =()=>({id:_id++,role:'',company:'',period:'',desc:''})
 const mkEdu =()=>({id:_id++,degree:'',institution:'',year:'',desc:''})
 const mkSvc =()=>({id:_id++,icon:'⚡',title:'',desc:''})
 const mkTes =()=>({id:_id++,name:'',role:'',text:'',avatar:''})
+const mkCert=()=>({id:_id++,name:'',issuer:'',year:'',url:'',image:''})
+const mkLearn=()=>({id:_id++,title:'',desc:'',icon:'📚',status:'active'})
+
 const slugify=v=>v.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'portfolio'
 const isDataUrl=v=>typeof v==='string'&&v.startsWith('data:')
 
@@ -41,7 +44,9 @@ function Card({icon,title,children}){
 export default function MakerPage(){
   const[name,setName]=useState('')
   const[jobTitle,setJobTitle]=useState('')
+  const[typedTitles,setTypedTitles]=useState('')
   const[bio,setBio]=useState('')
+  const[aboutLong,setAboutLong]=useState('')
   const[location,setLocation]=useState('')
   const[email,setEmail]=useState('')
   const[avatar,setAvatar]=useState('')
@@ -49,33 +54,44 @@ export default function MakerPage(){
   const[whatsapp,setWhatsapp]=useState('')
   const[resumeUrl,setResumeUrl]=useState('')
   const[cvFile,setCvFile]=useState(null)
+  
   const[upwork,setUpwork]=useState('')
   const[freelancer,setFreelancer]=useState('')
   const[mostaql,setMostaql]=useState('')
   const[fiveamsat,setFiveamsat]=useState('')
+  
   const[yearsExp,setYearsExp]=useState('')
   const[projCount,setProjCount]=useState('')
   const[clients,setClients]=useState('')
   const[satisfaction,setSatisfaction]=useState('')
+  
   const[skills,setSkills]=useState([])
   const[skillInput,setSkillInput]=useState('')
   const skillRef=useRef(null)
+  
   const[projects,setProjects]=useState([mkProj()])
   const[experiences,setExperiences]=useState([mkExp()])
   const[educations,setEducations]=useState([mkEdu()])
   const[services,setServices]=useState([])
+  const[certifications,setCertifications]=useState([])
+  const[learning,setLearning]=useState([])
   const[testimonials,setTestimonials]=useState([])
+  
   const[github,setGithub]=useState('')
   const[linkedin,setLinkedin]=useState('')
   const[twitter,setTwitter]=useState('')
   const[website,setWebsite]=useState('')
   const[instagram,setInstagram]=useState('')
   const[youtube,setYoutube]=useState('')
+  
   const[theme,setTheme]=useState('violet')
   const[sectionSpacing,setSectionSpacing]=useState('medium')
   const[fontFamily,setFontFamily]=useState('sans')
   const[primaryColor,setPrimaryColor]=useState('#8b5cf6')
+  
   const[link,setLink]=useState('')
+  const[shortLink,setShortLink]=useState('')
+  const[shortening,setShortening]=useState(false)
   const[copied,setCopied]=useState(false)
   const resultRef=useRef(null)
 
@@ -86,8 +102,10 @@ export default function MakerPage(){
   },[skillInput,skills])
   const onSkillKey=e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();commitSkill()}}
   const rmSkill=i=>setSkills(p=>p.filter((_,j)=>j!==i))
+  
   const upd=(set,id,f,v)=>set(p=>p.map(x=>x.id===id?{...x,[f]:v}:x))
   const rm=(set,id)=>set(p=>p.filter(x=>x.id!==id))
+  
   const toDataUrl=(file,cb)=>{
     const reader=new FileReader()
     reader.onload=e=>cb(e.target?.result||'')
@@ -115,12 +133,26 @@ export default function MakerPage(){
     toDataUrl(file,(data)=>upd(setProjects,id,'image',data))
   }
 
+  const onCertImageUpload=(id,e)=>{
+    const file=e.target.files?.[0]
+    if(!file)return
+    toDataUrl(file,(data)=>upd(setCertifications,id,'image',data))
+  }
+
   const generate=()=>{
     if(!name.trim()||!bio.trim()){alert('Please fill in at least your Name and Bio.');return}
+    
     const data={
-      name:name.trim(),title:jobTitle.trim(),bio:bio.trim(),
-      location:location.trim(),email:email.trim(),avatar:avatar.trim(),
-      whatsapp:whatsapp.trim(),resumeUrl:resumeUrl.trim(),
+      name:name.trim(),
+      title:jobTitle.trim(),
+      typedWords:typedTitles.split(',').map(s=>s.trim()).filter(Boolean),
+      bio:bio.trim(),
+      aboutLong:aboutLong.trim(),
+      location:location.trim(),
+      email:email.trim(),
+      avatar:avatar.trim(),
+      whatsapp:whatsapp.trim(),
+      resumeUrl:resumeUrl.trim(),
       cvFile,
       freelance:{
         upwork:upwork.trim(),
@@ -134,32 +166,64 @@ export default function MakerPage(){
       educations:educations.filter(e=>e.degree.trim()||e.institution.trim()).map(e=>({degree:e.degree.trim(),institution:e.institution.trim(),year:e.year.trim(),desc:e.desc.trim()})),
       projects:projects.filter(p=>p.name.trim()).map(p=>({name:p.name.trim(),url:p.url.trim(),github:p.github.trim(),desc:p.desc.trim(),tech:p.tech.trim(),image:p.image,featured:p.featured})),
       services:services.filter(sv=>sv.title.trim()).map(sv=>({icon:sv.icon,title:sv.title.trim(),desc:sv.desc.trim()})),
+      certifications:certifications.filter(c=>c.name.trim()).map(c=>({name:c.name.trim(),issuer:c.issuer.trim(),year:c.year.trim(),url:c.url.trim(),image:c.image})),
+      learning:learning.filter(l=>l.title.trim()).map(l=>({title:l.title.trim(),desc:l.desc.trim(),icon:l.icon,status:l.status})),
       testimonials:testimonials.filter(t=>t.name.trim()&&t.text.trim()).map(t=>({name:t.name.trim(),role:t.role.trim(),text:t.text.trim(),avatar:t.avatar.trim()})),
       links:{github:github.trim(),linkedin:linkedin.trim(),twitter:twitter.trim(),website:website.trim(),instagram:instagram.trim(),youtube:youtube.trim()},
       layout:{sectionSpacing,fontFamily,primaryColor},
       theme,
     }
+    
     const compactData={
       ...data,
-      // keep links compact by excluding heavy uploaded blobs
       avatar:isDataUrl(data.avatar)?'':data.avatar,
       cvFile:null,
       projects:data.projects.map(p=>({
         ...p,
         image:isDataUrl(p.image)?'':p.image,
       })),
+      certifications:data.certifications.map(c=>({
+        ...c,
+        image:isDataUrl(c.image)?'':c.image,
+      }))
     }
 
     const shortId=Math.random().toString(36).slice(2,8)
     const userSlug=slugify(name)
     const compressed=compressToEncodedURIComponent(JSON.stringify(compactData))
-    const url=`${window.location.origin}${window.location.pathname}#p=${userSlug}-${shortId}&d=${compressed}`
-    setLink(url)
+    const longUrl=`${window.location.origin}${window.location.pathname}#p=${userSlug}-${shortId}&d=${compressed}`
+    
+    setLink(longUrl)
+    setShortLink('')
+    setShortening(true)
     setTimeout(()=>resultRef.current?.scrollIntoView({behavior:'smooth'}),50)
+
+    // Generate short link via JSONP using is.gd to bypass CORS
+    const callbackName = 'isgdCallback_' + Math.round(100000 * Math.random());
+    window[callbackName] = function(data) {
+      delete window[callbackName];
+      const s = document.getElementById(callbackName);
+      if(s) document.body.removeChild(s);
+      
+      if(data.shorturl) {
+        setShortLink(data.shorturl);
+      }
+      setShortening(false);
+    };
+
+    const script = document.createElement('script');
+    script.id = callbackName;
+    script.src = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}&callback=${callbackName}`;
+    script.onerror = () => {
+      delete window[callbackName];
+      if(script.parentNode) document.body.removeChild(script);
+      setShortening(false);
+    };
+    document.body.appendChild(script);
   }
 
-  const copy=()=>{
-    navigator.clipboard.writeText(link).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000)})
+  const copy=(txt)=>{
+    navigator.clipboard.writeText(txt).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000)})
   }
 
   return(
@@ -182,9 +246,16 @@ export default function MakerPage(){
         <Card icon="👤" title="Personal Info">
           <div className={s.row}>
             <Field label="Full Name *"><input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex Johnson"/></Field>
-            <Field label="Job Title"><input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Full-Stack Developer"/></Field>
+            <Field label="Main Job Title"><input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Full-Stack Developer"/></Field>
           </div>
-          <Field label="Short Bio *"><textarea value={bio} onChange={e=>setBio(e.target.value)} placeholder="Write 2–3 sentences about yourself, your passion and expertise..."/></Field>
+          <Field label="Animated Job Titles (comma-separated, optional)" hint="These will animate via typewriter effect after your main job title.">
+            <input value={typedTitles} onChange={e=>setTypedTitles(e.target.value)} placeholder="UI Designer, Data Scientist, Tech Lead"/>
+          </Field>
+          <Field label="Hero Subtitle / Short Bio *"><textarea value={bio} onChange={e=>setBio(e.target.value)} placeholder="Write 1–2 sentences about yourself..." style={{minHeight:'60px'}}/></Field>
+          <Field label="Detailed About Me (Optional)" hint="A longer section detailing your journey and passion.">
+            <textarea value={aboutLong} onChange={e=>setAboutLong(e.target.value)} placeholder="I am a passionate software engineer with a deep interest in..." style={{minHeight:'100px'}}/>
+          </Field>
+          
           <div className={s.row}>
             <Field label="Location"><input value={location} onChange={e=>setLocation(e.target.value)} placeholder="Cairo, Egypt"/></Field>
             <Field label="Email"><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="alex@example.com"/></Field>
@@ -193,36 +264,31 @@ export default function MakerPage(){
             <Field label="WhatsApp Number" hint="Include country code e.g. +20 123 456 7890">
               <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} placeholder="+20 123 456 7890"/>
             </Field>
-            <Field label="Resume / CV Link (optional)" hint="Google Drive, Dropbox, or direct PDF link">
+            <Field label="Resume / CV Link (optional)">
               <input value={resumeUrl} onChange={e=>setResumeUrl(e.target.value)} placeholder="https://drive.google.com/..."/>
             </Field>
           </div>
           <div className={s.row}>
-            <Field label="Avatar URL (optional)">
-              <input value={avatar} onChange={e=>{setAvatar(e.target.value);setAvatarOk(false)}} placeholder="https://..."/>
-            </Field>
             <Field label="Upload Profile Picture">
               <input type="file" accept="image/*" onChange={onAvatarUpload}/>
             </Field>
-          </div>
-          <div className={s.row}>
             <Field label="Upload CV File (PDF/DOC)">
               <input type="file" accept=".pdf,.doc,.docx" onChange={onCvUpload}/>
               {cvFile&&<small className={s.hint}>Attached: {cvFile.name}</small>}
             </Field>
+          </div>
+          <div className={s.row}>
             <Field label="Upwork Profile">
               <input value={upwork} onChange={e=>setUpwork(e.target.value)} placeholder="https://upwork.com/freelancers/..."/>
             </Field>
-          </div>
-          <div className={s.row}>
             <Field label="Freelancer Profile">
               <input value={freelancer} onChange={e=>setFreelancer(e.target.value)} placeholder="https://freelancer.com/u/..."/>
             </Field>
+          </div>
+          <div className={s.row}>
             <Field label="Mostaql Profile">
               <input value={mostaql} onChange={e=>setMostaql(e.target.value)} placeholder="https://mostaql.com/u/..."/>
             </Field>
-          </div>
-          <div className={s.row}>
             <Field label="5amsat Profile">
               <input value={fiveamsat} onChange={e=>setFiveamsat(e.target.value)} placeholder="https://khamsat.com/user/..."/>
             </Field>
@@ -323,7 +389,7 @@ export default function MakerPage(){
                   <div className={s.emojiRow}>
                     <input className={s.emojiInput} value={sv.icon} onChange={e=>upd(setServices,sv.id,'icon',e.target.value)} maxLength={4}/>
                     <div className={s.emojiGrid}>
-                      {EMOJIS.map(em=>(<button key={em} type="button" className={`${s.emojiBt} ${sv.icon===em?s.emojiActive:''}`} onClick={()=>upd(setServices,sv.id,'icon',em)}>{em}</button>))}
+                      {EMOJIS.slice(0,16).map(em=>(<button key={em} type="button" className={`${s.emojiBt} ${sv.icon===em?s.emojiActive:''}`} onClick={()=>upd(setServices,sv.id,'icon',em)}>{em}</button>))}
                     </div>
                   </div>
                 </Field>
@@ -333,6 +399,52 @@ export default function MakerPage(){
             </div>
           ))}
           <button className={s.addBtn} onClick={()=>setServices(p=>[...p,mkSvc()])}>＋ Add Service</button>
+        </Card>
+
+        {/* CERTIFICATIONS */}
+        <Card icon="🏆" title="Certifications">
+          <p className={s.hint} style={{marginBottom:'1.2rem'}}>Showcase your certificates and achievements.</p>
+          {certifications.map(c=>(
+            <div key={c.id} className={s.dynItem}>
+              <button className={s.removeBtn} onClick={()=>rm(setCertifications,c.id)}>Remove</button>
+              <div className={s.row}>
+                <Field label="Certificate Name"><input value={c.name} onChange={e=>upd(setCertifications,c.id,'name',e.target.value)} placeholder="AWS Cloud Practitioner"/></Field>
+                <Field label="Issuer / Organization"><input value={c.issuer} onChange={e=>upd(setCertifications,c.id,'issuer',e.target.value)} placeholder="Amazon Web Services"/></Field>
+              </div>
+              <div className={s.row}>
+                <Field label="Year"><input value={c.year} onChange={e=>upd(setCertifications,c.id,'year',e.target.value)} placeholder="2023"/></Field>
+                <Field label="Credential URL"><input value={c.url} onChange={e=>upd(setCertifications,c.id,'url',e.target.value)} placeholder="https://..."/></Field>
+              </div>
+              <Field label="Certificate Image">
+                <input type="file" accept="image/*" onChange={e=>onCertImageUpload(c.id,e)}/>
+                {c.image&&<img src={c.image} alt="Cert preview" style={{marginTop:'.6rem',width:'100%',maxWidth:'220px',height:'120px',objectFit:'cover',borderRadius:'8px'}}/>}
+              </Field>
+            </div>
+          ))}
+          <button className={s.addBtn} onClick={()=>setCertifications(p=>[...p,mkCert()])}>＋ Add Certification</button>
+        </Card>
+
+        {/* LEARNING */}
+        <Card icon="🧠" title="Currently Learning">
+          <p className={s.hint} style={{marginBottom:'1.2rem'}}>What are you studying or planning to learn next?</p>
+          {learning.map(l=>(
+            <div key={l.id} className={s.dynItem}>
+              <button className={s.removeBtn} onClick={()=>rm(setLearning,l.id)}>Remove</button>
+              <div className={s.row}>
+                <Field label="Topic Title"><input value={l.title} onChange={e=>upd(setLearning,l.id,'title',e.target.value)} placeholder="Machine Learning"/></Field>
+                <Field label="Status">
+                  <select value={l.status} onChange={e=>upd(setLearning,l.id,'status',e.target.value)}>
+                    <option value="active">In Progress</option>
+                    <option value="soon">Coming Soon</option>
+                    <option value="done">Done</option>
+                  </select>
+                </Field>
+              </div>
+              <Field label="Icon / Emoji"><input value={l.icon} onChange={e=>upd(setLearning,l.id,'icon',e.target.value)} placeholder="📚" style={{maxWidth:'80px'}}/></Field>
+              <Field label="Short Description"><textarea value={l.desc} onChange={e=>upd(setLearning,l.id,'desc',e.target.value)} placeholder="Studying algorithms and neural networks..." style={{minHeight:'55px'}}/></Field>
+            </div>
+          ))}
+          <button className={s.addBtn} onClick={()=>setLearning(p=>[...p,mkLearn()])}>＋ Add Learning Goal</button>
         </Card>
 
         {/* TESTIMONIALS */}
@@ -411,14 +523,40 @@ export default function MakerPage(){
             <h3>Your Portfolio is Ready!</h3>
             <p>Share this link anywhere — LinkedIn bio, email signature, Twitter, anywhere!</p>
             <p className={s.hint}>For shorter links, uploaded image/CV files are not embedded. Use URL fields for assets you want visible in shared portfolio.</p>
-            <div className={s.linkRow}>
-              <div className={s.linkDisplay}>{link}</div>
-              <button className={s.copyBtn} onClick={copy} style={copied?{background:'#10b981'}:{}}>
-                {copied?'✓ Copied!':'Copy'}
-              </button>
-            </div>
-            <div className={s.resultActions}>
-              <a href={link} target="_blank" rel="noopener noreferrer" className={s.openBtn}>🌐 Preview Portfolio →</a>
+            
+            {shortening ? (
+              <div style={{margin:'1.5rem 0', color:'#a78bfa', fontWeight:600, animation:'pulse 1.5s infinite'}}>
+                ⏳ Generating ultra-short link...
+              </div>
+            ) : shortLink ? (
+              <>
+                <div className={s.linkRow} style={{marginTop:'1.2rem'}}>
+                  <div className={s.linkDisplay} style={{fontWeight:800, fontSize:'1.15rem', color:'#fff', textAlign:'center', padding:'.8rem'}}>{shortLink}</div>
+                  <button className={s.copyBtn} onClick={()=>copy(shortLink)} style={copied?{background:'#10b981'}:{}}>
+                    {copied?'✓ Copied!':'Copy Short Link'}
+                  </button>
+                </div>
+                <details style={{fontSize:'0.85rem', color:'var(--muted)', textAlign:'left', marginTop:'1.5rem', background:'var(--surface2)', padding:'1rem', borderRadius:'10px', border:'1px solid var(--border)'}}>
+                  <summary style={{cursor:'pointer', fontWeight:600, color:'var(--text)'}}>View Original Long Link</summary>
+                  <div className={s.linkRow} style={{marginTop:'1rem'}}>
+                    <div className={s.linkDisplay} style={{fontSize:'0.75rem'}}>{link}</div>
+                    <button className={s.copyBtn} onClick={()=>copy(link)} style={{padding:'0.4rem 0.8rem', fontSize:'0.75rem', ...(copied?{background:'#10b981'}:{})}}>
+                      Copy
+                    </button>
+                  </div>
+                </details>
+              </>
+            ) : (
+              <div className={s.linkRow} style={{marginTop:'1.2rem'}}>
+                <div className={s.linkDisplay}>{link}</div>
+                <button className={s.copyBtn} onClick={()=>copy(link)} style={copied?{background:'#10b981'}:{}}>
+                  {copied?'✓ Copied!':'Copy Link'}
+                </button>
+              </div>
+            )}
+
+            <div className={s.resultActions} style={{marginTop:'1.5rem'}}>
+              <a href={shortLink || link} target="_blank" rel="noopener noreferrer" className={s.openBtn}>🌐 Preview Portfolio →</a>
             </div>
           </div>
         )}

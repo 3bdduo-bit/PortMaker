@@ -1,44 +1,68 @@
-import{useEffect,useRef,useState}from'react'
+import{useEffect,useRef,useState,useCallback}from'react'
 import s from'./PortfolioPage.module.css'
 
 const THEMES={
-  violet: {cls:'',       a1:'#8b5cf6',a2:'#38bdf8'},
-  rose:   {cls:s.rose,   a1:'#f43f5e',a2:'#fb923c'},
+  violet:{cls:'',       a1:'#8b5cf6',a2:'#38bdf8'},
+  rose:  {cls:s.rose,   a1:'#f43f5e',a2:'#fb923c'},
   emerald:{cls:s.emerald,a1:'#10b981',a2:'#38bdf8'},
-  gold:   {cls:s.gold,   a1:'#f59e0b',a2:'#ec4899'},
+  gold:  {cls:s.gold,   a1:'#f59e0b',a2:'#ec4899'},
   midnight:{cls:s.midnight,a1:'#3b82f6',a2:'#8b5cf6'},
-  white:  {cls:s.white,  a1:'#8b5cf6',a2:'#38bdf8'},
+  white: {cls:s.white,  a1:'#8b5cf6',a2:'#38bdf8'},
 }
 
-/* ── Animated counter hook ─── */
+/* ── Animated counter ── */
 function useCounter(target,active){
   const[val,setVal]=useState(0)
   useEffect(()=>{
     if(!active||!target)return
-    const n=Number(target)
-    if(!n)return
-    let start=0
+    const n=Number(target);if(!n)return
+    let cur=0
     const step=Math.ceil(n/60)
-    const timer=setInterval(()=>{
-      start=Math.min(start+step,n)
-      setVal(start)
-      if(start>=n)clearInterval(timer)
-    },20)
-    return()=>clearInterval(timer)
+    const t=setInterval(()=>{cur=Math.min(cur+step,n);setVal(cur);if(cur>=n)clearInterval(t)},20)
+    return()=>clearInterval(t)
   },[target,active])
   return val
 }
 
-/* ── Section component ─── */
-function Sec({id,label,children,className=''}){
+/* ── Typewriter hook ── */
+function useTypewriter(words,speed=90,pause=2200){
+  const[text,setText]=useState('')
+  const[wi,setWi]=useState(0)
+  const[ci,setCi]=useState(0)
+  const[deleting,setDeleting]=useState(false)
+  useEffect(()=>{
+    if(!words?.length)return
+    const word=words[wi]
+    const delay=deleting?speed/2:speed
+    const t=setTimeout(()=>{
+      if(!deleting){
+        setText(word.slice(0,ci+1))
+        if(ci+1===word.length)setTimeout(()=>setDeleting(true),pause)
+        else setCi(c=>c+1)
+      } else {
+        setText(word.slice(0,ci-1))
+        if(ci-1===0){setDeleting(false);setWi(w=>(w+1)%words.length);setCi(0)}
+        else setCi(c=>c-1)
+      }
+    },delay)
+    return()=>clearTimeout(t)
+  },[words,wi,ci,deleting,speed,pause])
+  return text
+}
+
+/* ── Scroll-reveal section ── */
+function Sec({id,label,children,className='',delay=0}){
   const ref=useRef(null)
   useEffect(()=>{
-    const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)e.target.classList.add(s.visible)},{threshold:.12})
-    if(ref.current)obs.observe(ref.current)
+    const el=ref.current;if(!el)return
+    const obs=new IntersectionObserver(([e])=>{
+      if(e.isIntersecting){el.style.transitionDelay=`${delay}ms`;el.classList.add(s.visible)}
+    },{threshold:.1})
+    obs.observe(el)
     return()=>obs.disconnect()
-  },[])
+  },[delay])
   return(
-    <section id={id} ref={ref} className={`${s.section} ${className}`}>
+    <section id={id} ref={ref} className={`${s.section} ${className}`} aria-label={label||id}>
       {label&&(
         <div className={s.secHeader}>
           <div className={s.secLine}/>
@@ -51,7 +75,7 @@ function Sec({id,label,children,className=''}){
   )
 }
 
-/* ── Stats counter component ─── */
+/* ── Stat item ── */
 function StatItem({value,suffix='',label,active}){
   const n=useCounter(value,active)
   return(
@@ -62,20 +86,24 @@ function StatItem({value,suffix='',label,active}){
   )
 }
 
-/* ── Testimonials carousel ─── */
+/* ── Testimonials carousel ── */
 function Testimonials({items}){
   const[idx,setIdx]=useState(0)
   const prev=()=>setIdx(i=>(i-1+items.length)%items.length)
   const next=()=>setIdx(i=>(i+1)%items.length)
   const t=items[idx]
+  useEffect(()=>{
+    if(items.length<=1)return
+    const timer=setInterval(()=>setIdx(i=>(i+1)%items.length),5000)
+    return()=>clearInterval(timer)
+  },[items.length])
   return(
     <div className={s.tesWrap}>
       <div className={s.tesCard}>
         <div className={s.tesQuote}>"</div>
         <p className={s.tesText}>{t.text}</p>
         <div className={s.tesAuthor}>
-          {t.avatar
-            ?<img src={t.avatar} alt={t.name} className={s.tesAvatar}/>
+          {t.avatar?<img src={t.avatar} alt={t.name} className={s.tesAvatar} loading="lazy"/>
             :<div className={s.tesAvatarFb}>{t.name[0]}</div>}
           <div>
             <div className={s.tesName}>{t.name}</div>
@@ -85,37 +113,94 @@ function Testimonials({items}){
       </div>
       {items.length>1&&(
         <div className={s.tesNav}>
-          <button onClick={prev} className={s.tesBtn}>‹</button>
+          <button onClick={prev} className={s.tesBtn} aria-label="Previous">‹</button>
           <div className={s.tesDots}>
             {items.map((_,i)=>(
-              <button key={i} className={`${s.tesDot} ${i===idx?s.tesDotActive:''}`} onClick={()=>setIdx(i)}/>
+              <button key={i} className={`${s.tesDot} ${i===idx?s.tesDotActive:''}`}
+                onClick={()=>setIdx(i)} aria-label={`Testimonial ${i+1}`}/>
             ))}
           </div>
-          <button onClick={next} className={s.tesBtn}>›</button>
+          <button onClick={next} className={s.tesBtn} aria-label="Next">›</button>
         </div>
       )}
     </div>
   )
 }
 
+/* ── Certifications grid ── */
+function CertCard({cert}){
+  return(
+    <div className={s.certCard}>
+      {cert.image&&<img src={cert.image} alt={cert.name} className={s.certImg} loading="lazy"/>}
+      <div className={s.certBody}>
+        <div className={s.certName}>{cert.name}</div>
+        {cert.issuer&&<div className={s.certIssuer}>{cert.issuer}</div>}
+        {cert.year&&<div className={s.certYear}>{cert.year}</div>}
+        {cert.url&&<a href={cert.url} target="_blank" rel="noopener noreferrer" className={s.certLink}>View Certificate ↗</a>}
+      </div>
+    </div>
+  )
+}
+
+/* ── Learning item ── */
+function LearnItem({item,index}){
+  const ref=useRef(null)
+  useEffect(()=>{
+    const el=ref.current;if(!el)return
+    const obs=new IntersectionObserver(([e])=>{
+      if(e.isIntersecting){el.style.transitionDelay=`${index*80}ms`;el.classList.add(s.learnVisible)}
+    },{threshold:.1})
+    obs.observe(el)
+    return()=>obs.disconnect()
+  },[index])
+  return(
+    <div ref={ref} className={s.learnItem}>
+      <div className={s.learnIcon}>{item.icon||'📚'}</div>
+      <div>
+        <div className={s.learnTitle}>{item.title}</div>
+        {item.desc&&<div className={s.learnDesc}>{item.desc}</div>}
+      </div>
+      {item.status&&<span className={`${s.learnBadge} ${item.status==='done'?s.learnDone:item.status==='soon'?s.learnSoon:s.learnActive}`}>
+        {item.status==='done'?'✓ Done':item.status==='soon'?'Coming Soon':'In Progress'}
+      </span>}
+    </div>
+  )
+}
+
+/* ── Main ── */
 export default function PortfolioPage({data}){
   const[scrollPct,setScrollPct]=useState(0)
+  const[activeSection,setActiveSection]=useState('hero')
   const[statsActive,setStatsActive]=useState(false)
+  const[navOpen,setNavOpen]=useState(false)
   const statsRef=useRef(null)
   const makerUrl=window.location.origin+window.location.pathname
 
-  /* Scroll progress + back-to-top */
+  const typedWords=data?.title?[data.title,...(data.typedWords||[])]:undefined
+
+  const typed=useTypewriter(
+    typedWords&&typedWords.length>1?typedWords:null,
+    80,2000
+  )
+
+  /* scroll progress + active section */
   useEffect(()=>{
     const onScroll=()=>{
       const doc=document.documentElement
-      const pct=(doc.scrollTop/(doc.scrollHeight-doc.clientHeight))*100
-      setScrollPct(pct)
+      setScrollPct((doc.scrollTop/(doc.scrollHeight-doc.clientHeight))*100)
+      const sections=document.querySelectorAll('section[id],header[id]')
+      let cur='hero'
+      sections.forEach(sec=>{
+        const top=sec.getBoundingClientRect().top
+        if(top<=120)cur=sec.id
+      })
+      setActiveSection(cur)
     }
     window.addEventListener('scroll',onScroll,{passive:true})
     return()=>window.removeEventListener('scroll',onScroll)
   },[])
 
-  /* Stats observer */
+  /* stats observer */
   useEffect(()=>{
     if(!statsRef.current)return
     const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)setStatsActive(true)},{threshold:.3})
@@ -123,7 +208,7 @@ export default function PortfolioPage({data}){
     return()=>obs.disconnect()
   },[])
 
-  /* Document title */
+  /* title */
   useEffect(()=>{
     document.title=data?`${data.name} – Portfolio`:'Portfolio Not Found'
   },[data])
@@ -141,83 +226,102 @@ export default function PortfolioPage({data}){
     )
   }
 
-  const t=THEMES[data.theme]||THEMES.violet
+  const th=THEMES[data.theme]||THEMES.violet
   const layout=data.layout||{}
   const hasStats=data.stats&&Object.values(data.stats).some(v=>v)
   const hasSocials=(data.links&&Object.values(data.links).some(v=>v))||(data.freelance&&Object.values(data.freelance).some(v=>v))
   const waLink=data.whatsapp?`https://wa.me/${data.whatsapp.replace(/\D/g,'')}?text=Hi%2C%20I%20found%20your%20portfolio!`:null
   const resumeHref=data.cvFile?.data||data.resumeUrl
-  const resumeLabel=data.cvFile?.name?'Attached CV':'Resume'
-  const spacingClass={
-    small:s.sectionSmall,
-    medium:'',
-    large:s.sectionLarge,
-  }[layout.sectionSpacing||'medium']
-  const fontClass={
-    sans:'',
-    serif:s.fontSerif,
-    mono:s.fontMono,
-  }[layout.fontFamily||'sans']
+  const resumeLabel=data.cvFile?.name?'Download CV':'Resume'
+  const spacingClass={small:s.sectionSmall,medium:'',large:s.sectionLarge}[layout.sectionSpacing||'medium']
+  const fontClass={sans:'',serif:s.fontSerif,mono:s.fontMono}[layout.fontFamily||'sans']
   const dynamicStyle=layout.primaryColor?{'--pA1':layout.primaryColor}:undefined
 
   const socials=[
-    data.links?.github    &&{href:data.links.github,   icon:'🐙',label:'GitHub'},
-    data.links?.linkedin  &&{href:data.links.linkedin, icon:'💼',label:'LinkedIn'},
-    data.links?.twitter   &&{href:data.links.twitter,  icon:'🐦',label:'Twitter'},
-    data.links?.website   &&{href:data.links.website,  icon:'🌐',label:'Website'},
-    data.links?.instagram &&{href:data.links.instagram,icon:'📸',label:'Instagram'},
-    data.links?.youtube   &&{href:data.links.youtube,  icon:'▶️',label:'YouTube'},
-    data.freelance?.upwork&&{href:data.freelance.upwork,icon:'🟢',label:'Upwork'},
-    data.freelance?.freelancer&&{href:data.freelance.freelancer,icon:'💠',label:'Freelancer'},
-    data.freelance?.mostaql&&{href:data.freelance.mostaql,icon:'🟠',label:'Mostaql'},
-    data.freelance?.fiveamsat&&{href:data.freelance.fiveamsat,icon:'🟤',label:'5amsat'},
+    data.links?.github    &&{href:data.links.github,   icon:'⌥', svg:'github',  label:'GitHub'},
+    data.links?.linkedin  &&{href:data.links.linkedin, icon:'💼',svg:'linkedin', label:'LinkedIn'},
+    data.links?.twitter   &&{href:data.links.twitter,  icon:'🐦',svg:'twitter',  label:'Twitter'},
+    data.links?.website   &&{href:data.links.website,  icon:'🌐',svg:'website',  label:'Website'},
+    data.links?.instagram &&{href:data.links.instagram,icon:'📸',svg:'ig',       label:'Instagram'},
+    data.links?.youtube   &&{href:data.links.youtube,  icon:'▶️',svg:'yt',       label:'YouTube'},
+    data.freelance?.upwork&&{href:data.freelance.upwork,icon:'🟢',svg:'upwork',  label:'Upwork'},
+    data.freelance?.freelancer&&{href:data.freelance.freelancer,icon:'💠',svg:'fl',label:'Freelancer'},
+    data.freelance?.mostaql&&{href:data.freelance.mostaql,icon:'🟠',svg:'mq',   label:'Mostaql'},
+    data.freelance?.fiveamsat&&{href:data.freelance.fiveamsat,icon:'🟤',svg:'5k',label:'5amsat'},
   ].filter(Boolean)
 
-  /* Nav sections */
   const navSections=[
+    data.bio&&{id:'about',label:'About'},
     hasStats&&{id:'stats',label:'Stats'},
     data.skills?.length&&{id:'skills',label:'Skills'},
     data.experiences?.length&&{id:'experience',label:'Experience'},
     data.educations?.length&&{id:'education',label:'Education'},
     data.projects?.length&&{id:'projects',label:'Projects'},
     data.services?.length&&{id:'services',label:'Services'},
+    data.certifications?.length&&{id:'certifications',label:'Certifications'},
+    data.learning?.length&&{id:'learning',label:'Learning'},
     data.testimonials?.length&&{id:'testimonials',label:'Reviews'},
+    (data.email||waLink||hasSocials)&&{id:'contact',label:'Contact'},
   ].filter(Boolean)
 
   return(
-    <div className={`${s.page} ${t.cls} ${fontClass}`} style={dynamicStyle}>
-      {/* SCROLL PROGRESS */}
-      <div className={s.progressBar} style={{width:`${scrollPct}%`}}/>
+    <div className={`${s.page} ${th.cls} ${fontClass}`} style={dynamicStyle}>
+      {/* PROGRESS BAR */}
+      <div className={s.progressBar} style={{width:`${scrollPct}%`}} role="progressbar" aria-valuenow={Math.round(scrollPct)} aria-valuemin={0} aria-valuemax={100}/>
 
-      {/* STICKY NAV */}
-      <nav className={s.nav}>
+      {/* NAV */}
+      <nav className={s.nav} aria-label="Portfolio navigation">
         <div className={s.navInner}>
-          <div className={s.navLinks}>
+          <a href="#hero" className={s.navBrand} aria-label="Back to top">
+            {data.name.split(' ')[0]}
+          </a>
+          <div className={`${s.navLinks} ${navOpen?s.navOpen:''}`}>
             {navSections.map(sec=>(
-              <a key={sec.id} href={`#${sec.id}`} className={s.navLink}>{sec.label}</a>
+              <a key={sec.id} href={`#${sec.id}`}
+                className={`${s.navLink} ${activeSection===sec.id?s.navActive:''}`}
+                onClick={()=>setNavOpen(false)}>
+                {sec.label}
+              </a>
             ))}
           </div>
           <div className={s.navActions}>
             {resumeHref&&(
-              <a href={resumeHref} download={data.cvFile?.name||undefined} target="_blank" rel="noopener noreferrer" className={s.navCv}>⬇ {resumeLabel}</a>
+              <a href={resumeHref} download={data.cvFile?.name||undefined}
+                target="_blank" rel="noopener noreferrer" className={s.navCv}>
+                ⬇ {resumeLabel}
+              </a>
             )}
+            <button className={s.navHamburger} onClick={()=>setNavOpen(o=>!o)}
+              aria-label={navOpen?'Close menu':'Open menu'} aria-expanded={navOpen}>
+              <span/><span/><span/>
+            </button>
           </div>
         </div>
       </nav>
 
       {/* HERO */}
       <header id="hero" className={s.hero}>
-        <div className={s.heroBg}/>
+        <div className={s.heroBg} aria-hidden="true">
+          <div className={s.heroOrb1}/>
+          <div className={s.heroOrb2}/>
+          <div className={s.heroGrid}/>
+        </div>
         <div className={s.heroInner}>
           {data.avatar
-            ?<div className={s.avatarRing}><img src={data.avatar} alt={data.name} className={s.avatarImg}/></div>
-            :<div className={s.avatarRing}><div className={s.avatarFb}>{data.name[0]}</div></div>}
+            ?<div className={s.avatarRing}><img src={data.avatar} alt={`${data.name} profile photo`} className={s.avatarImg} width="120" height="120"/></div>
+            :<div className={s.avatarRing}><div className={s.avatarFb} aria-label={data.name[0]}>{data.name[0]}</div></div>}
           <h1 className={s.heroName}>{data.name}</h1>
-          {data.title&&<p className={s.jobTitle}>{data.title}</p>}
+          {data.title&&(
+            <p className={s.jobTitle} aria-live="polite">
+              {typedWords&&typedWords.length>1
+                ?<><span>{typed}</span><span className={s.cursor}>|</span></>
+                :data.title}
+            </p>
+          )}
           {(data.location||data.email)&&(
             <div className={s.metaRow}>
               {data.location&&<span className={s.metaPill}>📍 {data.location}</span>}
-              {data.email&&<span className={s.metaPill}>✉️ {data.email}</span>}
+              {data.email&&<a href={`mailto:${data.email}`} className={s.metaPill}>✉️ {data.email}</a>}
             </div>
           )}
           {data.bio&&<p className={s.bio}>{data.bio}</p>}
@@ -229,16 +333,29 @@ export default function PortfolioPage({data}){
           {socials.length>0&&(
             <div className={s.socialRow}>
               {socials.map(sc=>(
-                <a key={sc.label} href={sc.href} target="_blank" rel="noopener noreferrer" className={s.socialBtn}>
-                  <span>{sc.icon}</span>{sc.label}
+                <a key={sc.label} href={sc.href} target="_blank" rel="noopener noreferrer"
+                  className={s.socialBtn} aria-label={sc.label}>
+                  <span aria-hidden="true">{sc.icon}</span>{sc.label}
                 </a>
               ))}
             </div>
           )}
+          <a href={`#${navSections[0]?.id||'stats'}`} className={s.scrollDown} aria-label="Scroll down">
+            <span className={s.scrollArrow}/>
+          </a>
         </div>
       </header>
 
       <div className={s.container}>
+        {/* ABOUT */}
+        {data.aboutLong&&(
+          <Sec id="about" label="About Me" className={spacingClass}>
+            <div className={s.aboutCard}>
+              <p className={s.aboutText}>{data.aboutLong}</p>
+            </div>
+          </Sec>
+        )}
+
         {/* STATS */}
         {hasStats&&(
           <div ref={statsRef} id="stats">
@@ -257,7 +374,9 @@ export default function PortfolioPage({data}){
         {data.skills?.length>0&&(
           <Sec id="skills" label="Skills" className={spacingClass}>
             <div className={s.skillsGrid}>
-              {data.skills.map((sk,i)=><span key={i} className={s.skillTag}>{sk}</span>)}
+              {data.skills.map((sk,i)=>(
+                <span key={i} className={s.skillTag} style={{animationDelay:`${i*40}ms`}}>{sk}</span>
+              ))}
             </div>
           </Sec>
         )}
@@ -311,19 +430,15 @@ export default function PortfolioPage({data}){
               <>
                 <div className={s.projSubLabel}>⭐ Featured</div>
                 <div className={s.projsGrid}>
-                  {data.projects.filter(p=>p.featured).map((p,i)=>(
-                    <ProjCard key={i} p={p}/>
-                  ))}
+                  {data.projects.filter(p=>p.featured).map((p,i)=><ProjCard key={i} p={p}/>)}
                 </div>
                 {data.projects.filter(p=>!p.featured).length>0&&(
-                  <div className={s.projSubLabel} style={{marginTop:'1.5rem'}}>Other Projects</div>
+                  <div className={s.projSubLabel} style={{marginTop:'2rem'}}>Other Projects</div>
                 )}
               </>
             )}
             <div className={s.projsGrid}>
-              {data.projects.filter(p=>!p.featured).map((p,i)=>(
-                <ProjCard key={i} p={p}/>
-              ))}
+              {data.projects.filter(p=>!p.featured).map((p,i)=><ProjCard key={i} p={p}/>)}
             </div>
           </Sec>
         )}
@@ -333,12 +448,31 @@ export default function PortfolioPage({data}){
           <Sec id="services" label="Services" className={spacingClass}>
             <div className={s.servicesGrid}>
               {data.services.map((sv,i)=>(
-                <div key={i} className={s.serviceCard}>
-                  <div className={s.serviceIcon}>{sv.icon}</div>
+                <div key={i} className={s.serviceCard} style={{animationDelay:`${i*80}ms`}}>
+                  <div className={s.serviceIcon} aria-hidden="true">{sv.icon}</div>
                   <h3 className={s.serviceTitle}>{sv.title}</h3>
                   {sv.desc&&<p className={s.serviceDesc}>{sv.desc}</p>}
                 </div>
               ))}
+            </div>
+          </Sec>
+        )}
+
+        {/* CERTIFICATIONS */}
+        {data.certifications?.length>0&&(
+          <Sec id="certifications" label="Certifications" className={spacingClass}>
+            <div className={s.certGrid}>
+              {data.certifications.map((c,i)=><CertCard key={i} cert={c}/>)}
+            </div>
+          </Sec>
+        )}
+
+        {/* LEARNING */}
+        {data.learning?.length>0&&(
+          <Sec id="learning" label="Currently Learning" className={spacingClass}>
+            <p className={s.learnIntro}>Always expanding my skillset — here's what I'm working on.</p>
+            <div className={s.learnGrid}>
+              {data.learning.map((item,i)=><LearnItem key={i} item={item} index={i}/>)}
             </div>
           </Sec>
         )}
@@ -354,8 +488,8 @@ export default function PortfolioPage({data}){
         {(data.email||waLink||hasSocials)&&(
           <Sec id="contact" label="Contact" className={spacingClass}>
             <div className={s.contactCard}>
-              <h3>Let's Work Together</h3>
-              <p>Have a project in mind? I'd love to hear from you!</p>
+              <h2 className={s.contactTitle}>Let's Work Together</h2>
+              <p className={s.contactSub}>Have a project in mind? I'd love to hear from you!</p>
               <div className={s.contactBtns}>
                 {data.email&&<a href={`mailto:${data.email}`} className={s.emailBtn}>✉️ Send Email</a>}
                 {waLink&&<a href={waLink} target="_blank" rel="noopener noreferrer" className={s.waContactBtn}>💬 WhatsApp</a>}
@@ -364,8 +498,9 @@ export default function PortfolioPage({data}){
               {socials.length>0&&(
                 <div className={s.socialRow} style={{marginTop:'1.5rem'}}>
                   {socials.map(sc=>(
-                    <a key={sc.label} href={sc.href} target="_blank" rel="noopener noreferrer" className={s.socialBtn}>
-                      <span>{sc.icon}</span>{sc.label}
+                    <a key={sc.label} href={sc.href} target="_blank" rel="noopener noreferrer"
+                      className={s.socialBtn} aria-label={sc.label}>
+                      <span aria-hidden="true">{sc.icon}</span>{sc.label}
                     </a>
                   ))}
                 </div>
@@ -376,30 +511,37 @@ export default function PortfolioPage({data}){
       </div>
 
       <footer className={s.footer}>
-        Built with Portfolio Maker · {data.name} © {new Date().getFullYear()}
+        <span>Built with <a href={makerUrl} className={s.footerLink}>Portfolio Maker</a></span>
+        <span className={s.footerDot}>·</span>
+        <span>{data.name} © {new Date().getFullYear()}</span>
       </footer>
-
     </div>
   )
 }
 
-/* ── Project card ─── */
+/* ── Project card ── */
 function ProjCard({p}){
+  const[hovered,setHovered]=useState(false)
   return(
-    <div className={`${s.projCard} ${p.featured?s.projFeatured:''}`}>
-      {p.featured&&<div className={s.featuredBadge}>⭐ Featured</div>}
-      {p.image&&<img src={p.image} alt={p.name} className={s.projImage}/>}
-      <div className={s.projName}>{p.name}</div>
-      {p.desc&&<p className={s.projDesc}>{p.desc}</p>}
-      {p.tech&&(
-        <div className={s.projTech}>
-          {p.tech.split(',').map((ch,j)=><span key={j} className={s.techChip}>{ch.trim()}</span>)}
+    <article
+      className={`${s.projCard} ${p.featured?s.projFeatured:''}`}
+      onMouseEnter={()=>setHovered(true)}
+      onMouseLeave={()=>setHovered(false)}>
+      {p.featured&&<div className={s.featuredBadge} aria-label="Featured project">⭐ Featured</div>}
+      {p.image&&<img src={p.image} alt={`${p.name} screenshot`} className={s.projImage} loading="lazy"/>}
+      <div className={s.projBody}>
+        <h3 className={s.projName}>{p.name}</h3>
+        {p.desc&&<p className={s.projDesc}>{p.desc}</p>}
+        {p.tech&&(
+          <div className={s.projTech}>
+            {p.tech.split(',').map((ch,j)=><span key={j} className={s.techChip}>{ch.trim()}</span>)}
+          </div>
+        )}
+        <div className={s.projLinks}>
+          {p.url&&<a href={p.url} target="_blank" rel="noopener noreferrer" className={s.projLink}>🔗 Live Demo</a>}
+          {p.github&&<a href={p.github} target="_blank" rel="noopener noreferrer" className={s.projLinkGh}>⌥ GitHub</a>}
         </div>
-      )}
-      <div className={s.projLinks}>
-        {p.url&&<a href={p.url} target="_blank" rel="noopener noreferrer" className={s.projLink}>🔗 Live Demo</a>}
-        {p.github&&<a href={p.github} target="_blank" rel="noopener noreferrer" className={s.projLinkGh}>⌥ GitHub</a>}
       </div>
-    </div>
+    </article>
   )
 }
