@@ -1,85 +1,179 @@
-*, *::before, *::after {
+:root {
+  /* Premium Light Mode - Refined Indigo & Slate */
+  --bg-primary-light: #f8fafc;
+  --bg-secondary-light: #ffffff;
+  --text-primary-light: #0f172a;
+  --text-secondary-light: #475569;
+  --accent-light: #6366f1;
+  --accent-hover-light: #4f46e5;
+  --accent-bg-light: #eef2ff;
+  --border-light: #e2e8f0;
+  --surface-light: #ffffff;
+  --accent-text-light: #4338ca;
+  
+  /* Premium Dark Mode - Deep Obsidian & Emerald */
+  --bg-primary-dark: #020617;
+  --bg-secondary-dark: #0f172a;
+  --text-primary-dark: #f8fafc;
+  --text-secondary-dark: #94a3b8;
+  --accent-dark: #10b981;
+  --accent-hover-dark: #059669;
+  --accent-bg-dark: rgba(16, 185, 129, 0.1);
+  --border-dark: #1e293b;
+  --surface-dark: #0f172a;
+  --accent-text-dark: #34d399;
+  
+  /* Active Variables */
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --accent: var(--accent-light);
+  --accent-hover: var(--accent-hover-light);
+  --accent-bg: var(--accent-bg-light);
+  --accent-text: var(--accent-text-light);
+  --border: var(--border-light);
+  --surface: var(--surface-light);
+
+  /* Aliases for compatibility */
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+
+
+  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  --error: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  --grad-primary: linear-gradient(135deg, var(--accent), #8b5cf6);
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  
+  --surface-rgb: 255, 255, 255;
+  --accent-rgb: 99, 102, 241;
+}
+
+html[data-theme="dark"] {
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --accent: var(--accent-dark);
+  --accent-hover: var(--accent-hover-dark);
+  --accent-bg: var(--accent-bg-dark);
+  --accent-text: var(--accent-text-dark);
+  --border: var(--border-dark);
+  --surface: var(--surface-dark);
+  
+  /* Aliases for compatibility */
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+
+  
+  --grad-primary: linear-gradient(135deg, var(--accent), #059669);
+  --glass: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  
+  --surface-rgb: 15, 23, 42;
+  --accent-rgb: 16, 185, 129;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-:root {
-  --bg: #0d0d17;
-  --surface: #15151f;
-  --surface2: #1d1d2e;
-  --border: #2c2c42;
-  --accent: #8b5cf6;
-  --accent2: #38bdf8;
-  --text: #e4e4f0;
-  --muted: #9494b2;
-  --radius: 14px;
-  --grad: linear-gradient(135deg, #8b5cf6, #38bdf8);
-}
-
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased; /* Safari/Chrome only — intentional */
-  font-smooth: always; /* Firefox fallback */
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Base UI Elements */
+input, textarea, select {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+  transform: translateY(-1px);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 a {
-  color: var(--accent2);
+  color: inherit;
   text-decoration: none;
+  transition: color 0.2s;
 }
 
-input,
-textarea,
-select {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  padding: 0.7rem 0.95rem;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  width: 100%;
+/* Utility Classes */
+.text-animate {
+  animation: fadeInDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-textarea {
-  resize: vertical;
-  min-height: 90px;
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: #44445a;
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-/* Quoted attribute selectors (CSS spec requirement) */
-input[type="checkbox"] {
-  width: auto;
-  accent-color: var(--accent);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-input[type="number"] {
-  appearance: textfield;        /* Standard */
-  -moz-appearance: textfield;   /* Firefox legacy */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}

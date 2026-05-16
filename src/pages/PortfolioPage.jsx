@@ -1,4 +1,5 @@
 import{useEffect,useRef,useState,useCallback}from'react'
+import { Helmet } from 'react-helmet-async'
 import s from'./PortfolioPage.module.css'
 
 const THEMES={
@@ -208,10 +209,6 @@ export default function PortfolioPage({data}){
     return()=>obs.disconnect()
   },[])
 
-  /* title */
-  useEffect(()=>{
-    document.title=data?`${data.name} – Portfolio`:'Portfolio Not Found'
-  },[data])
 
   if(!data){
     return(
@@ -266,6 +263,13 @@ export default function PortfolioPage({data}){
 
   return(
     <div className={`${s.page} ${th.cls} ${fontClass}`} style={dynamicStyle}>
+      <Helmet>
+        <title>{data.name} | {data.jobTitle || 'Professional Portfolio'}</title>
+        <meta name="description" content={data.bio || `Check out ${data.name}'s professional portfolio.`} />
+        <meta property="og:title" content={`${data.name} | ${data.jobTitle || 'Portfolio'}`} />
+        <meta property="og:description" content={data.bio || `View the professional work and experience of ${data.name}.`} />
+        {data.avatar && <meta property="og:image" content={data.avatar} />}
+      </Helmet>
       {/* PROGRESS BAR */}
       <div className={s.progressBar} style={{width:`${scrollPct}%`}} role="progressbar" aria-valuenow={Math.round(scrollPct)} aria-valuemin={0} aria-valuemax={100}/>
 
@@ -340,9 +344,7 @@ export default function PortfolioPage({data}){
               ))}
             </div>
           )}
-          <a href={`#${navSections[0]?.id||'stats'}`} className={s.scrollDown} aria-label="Scroll down">
-            <span className={s.scrollArrow}/>
-          </a>
+
         </div>
       </header>
 
