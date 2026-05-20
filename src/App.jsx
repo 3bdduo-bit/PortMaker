@@ -2,7 +2,6 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { Helmet, HelmetProvider } from 'react-helmet-async'
 import { ThemeProvider } from './useTheme'
-import { ThemeToggle } from './ThemeToggle'
 
 // Lazy load pages for performance (Code Splitting)
 const MakerPage = lazy(() => import('./pages/MakerPage'));

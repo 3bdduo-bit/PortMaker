@@ -1,4 +1,4 @@
-import{useEffect,useRef,useState,useCallback}from'react'
+import { useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import s from'./PortfolioPage.module.css'
 
@@ -168,6 +168,30 @@ function LearnItem({item,index}){
   )
 }
 
+/* ── Helper to check if resume url is valid and safe ── */
+function isValidHref(url){
+  if(!url)return false
+  const t=url.trim()
+  return t!==''&&t!=='#'&&!t.toLowerCase().startsWith('javascript:')
+}
+
+/* ── Safe CV download/view link component ── */
+function CvLink({href,fileName,label,className}){
+  const isData=href?.startsWith('data:')
+  if(isData){
+    return(
+      <a href={href} download={fileName||'CV.pdf'} className={className}>
+        {label}
+      </a>
+    )
+  }
+  return(
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {label}
+    </a>
+  )
+}
+
 /* ── Main ── */
 export default function PortfolioPage({data}){
   const[scrollPct,setScrollPct]=useState(0)
@@ -228,7 +252,9 @@ export default function PortfolioPage({data}){
   const hasStats=data.stats&&Object.values(data.stats).some(v=>v)
   const hasSocials=(data.links&&Object.values(data.links).some(v=>v))||(data.freelance&&Object.values(data.freelance).some(v=>v))
   const waLink=data.whatsapp?`https://wa.me/${data.whatsapp.replace(/\D/g,'')}?text=Hi%2C%20I%20found%20your%20portfolio!`:null
-  const resumeHref=data.cvFile?.data||data.resumeUrl
+  const rawResumeHref=data.cvFile?.data||data.resumeUrl
+  const hasResume=isValidHref(rawResumeHref)
+  const resumeHref=hasResume?rawResumeHref:null
   const resumeLabel=data.cvFile?.name?'Download CV':'Resume'
   const spacingClass={small:s.sectionSmall,medium:'',large:s.sectionLarge}[layout.sectionSpacing||'medium']
   const fontClass={sans:'',serif:s.fontSerif,mono:s.fontMono}[layout.fontFamily||'sans']
@@ -290,10 +316,7 @@ export default function PortfolioPage({data}){
           </div>
           <div className={s.navActions}>
             {resumeHref&&(
-              <a href={resumeHref} download={data.cvFile?.name||undefined}
-                target="_blank" rel="noopener noreferrer" className={s.navCv}>
-                ⬇ {resumeLabel}
-              </a>
+              <CvLink href={resumeHref} fileName={data.cvFile?.name} label={`⬇ ${resumeLabel}`} className={s.navCv}/>
             )}
             <button className={s.navHamburger} onClick={()=>setNavOpen(o=>!o)}
               aria-label={navOpen?'Close menu':'Open menu'} aria-expanded={navOpen}>
@@ -332,7 +355,7 @@ export default function PortfolioPage({data}){
           <div className={s.heroButtons}>
             {waLink&&<a href={waLink} target="_blank" rel="noopener noreferrer" className={s.waBtn}>💬 WhatsApp Me</a>}
             {data.email&&<a href={`mailto:${data.email}`} className={s.emailBtnHero}>✉️ Email Me</a>}
-            {resumeHref&&<a href={resumeHref} download={data.cvFile?.name||undefined} target="_blank" rel="noopener noreferrer" className={s.cvBtnHero}>⬇ Download CV</a>}
+            {resumeHref&&<CvLink href={resumeHref} fileName={data.cvFile?.name} label="⬇ Download CV" className={s.cvBtnHero}/>}
           </div>
           {socials.length>0&&(
             <div className={s.socialRow}>
@@ -495,7 +518,7 @@ export default function PortfolioPage({data}){
               <div className={s.contactBtns}>
                 {data.email&&<a href={`mailto:${data.email}`} className={s.emailBtn}>✉️ Send Email</a>}
                 {waLink&&<a href={waLink} target="_blank" rel="noopener noreferrer" className={s.waContactBtn}>💬 WhatsApp</a>}
-                {resumeHref&&<a href={resumeHref} download={data.cvFile?.name||undefined} target="_blank" rel="noopener noreferrer" className={s.cvContactBtn}>⬇ Download CV</a>}
+                {resumeHref&&<CvLink href={resumeHref} fileName={data.cvFile?.name} label="⬇ Download CV" className={s.cvContactBtn}/>}
               </div>
               {socials.length>0&&(
                 <div className={s.socialRow} style={{marginTop:'1.5rem'}}>
@@ -513,7 +536,7 @@ export default function PortfolioPage({data}){
       </div>
 
       <footer className={s.footer}>
-        <span>Built with <a href={makerUrl} className={s.footerLink}>Portfolio Maker</a></span>
+        <span>Built with <span className={s.footerLink}>Portfolio Maker</span></span>
         <span className={s.footerDot}>·</span>
         <span>{data.name} © {new Date().getFullYear()}</span>
       </footer>
@@ -523,12 +546,9 @@ export default function PortfolioPage({data}){
 
 /* ── Project card ── */
 function ProjCard({p}){
-  const[hovered,setHovered]=useState(false)
   return(
     <article
-      className={`${s.projCard} ${p.featured?s.projFeatured:''}`}
-      onMouseEnter={()=>setHovered(true)}
-      onMouseLeave={()=>setHovered(false)}>
+      className={`${s.projCard} ${p.featured?s.projFeatured:''}`}>
       {p.featured&&<div className={s.featuredBadge} aria-label="Featured project">⭐ Featured</div>}
       {p.image&&<img src={p.image} alt={`${p.name} screenshot`} className={s.projImage} loading="lazy"/>}
       <div className={s.projBody}>

@@ -22,7 +22,6 @@ const mkCert = () => ({ id: _id++, name: '', issuer: '', year: '', url: '', imag
 const mkLearn = () => ({ id: _id++, title: '', desc: '', icon: '📚', status: 'active' })
 
 const slugify = v => v.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'portfolio'
-const isDataUrl = v => typeof v === 'string' && v.startsWith('data:')
 
 const enforceWords = (v, limit) => {
   if (!limit) return v;
@@ -112,26 +111,24 @@ export default function MakerPage({ user, onLogout }) {
   const [copied, setCopied] = useState(false)
   const [activeSection, setActiveSection] = useState('personal')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [savedData, setSavedData] = useState(null);
-  const [isScrolled, setIsScrolled] = useState(false)
-  const resultRef = useRef(null)
-
-  // Load saved data detection
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
+  const [savedData] = useState(() => {
+    const sKey = user?.email ? `portfolioData_${user.email}` : 'myPortfolioData';
+    const saved = localStorage.getItem(sKey);
     if (saved) {
       try {
         const d = JSON.parse(saved);
         if (d.name || d.bio) {
-          setSavedData(d);
-          setShowResumePrompt(true);
+          return d;
         }
       } catch (e) {
         console.error("Failed to parse saved portfolio", e);
       }
     }
-  }, [storageKey]);
+    return null;
+  });
+  const [showResumePrompt, setShowResumePrompt] = useState(() => !!savedData);
+  const [isScrolled, setIsScrolled] = useState(false)
+  const resultRef = useRef(null)
 
   const resumeProject = () => {
     const d = savedData;
@@ -226,7 +223,34 @@ export default function MakerPage({ user, onLogout }) {
 
   const toDataUrl = (file, cb) => {
     const reader = new FileReader()
-    reader.onload = e => cb(e.target?.result || '')
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_WIDTH = 600
+        const MAX_HEIGHT = 600
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width
+            width = MAX_WIDTH
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height
+            height = MAX_HEIGHT
+          }
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        cb(canvas.toDataURL('image/jpeg', 0.7))
+      }
+      img.src = e.target?.result || ''
+    }
     reader.readAsDataURL(file)
   }
 
@@ -242,7 +266,9 @@ export default function MakerPage({ user, onLogout }) {
   const onCvUpload = e => {
     const file = e.target.files?.[0]
     if (!file) return
-    toDataUrl(file, (data) => setCvFile({ name: file.name, data }))
+    const reader = new FileReader()
+    reader.onload = ev => setCvFile({ name: file.name, data: ev.target?.result || '' })
+    reader.readAsDataURL(file)
   }
 
   const onProjectImageUpload = (id, e) => {
@@ -300,16 +326,7 @@ export default function MakerPage({ user, onLogout }) {
 
     const compactData = {
       ...data,
-      avatar: isDataUrl(data.avatar) ? '' : data.avatar,
-      cvFile: null,
-      projects: data.projects.map(p => ({
-        ...p,
-        image: isDataUrl(p.image) ? '' : p.image,
-      })),
-      certifications: data.certifications.map(c => ({
-        ...c,
-        image: isDataUrl(c.image) ? '' : c.image,
-      }))
+      cvFile: null
     }
 
     const shortId = Math.random().toString(36).slice(2, 8)
@@ -363,6 +380,7 @@ export default function MakerPage({ user, onLogout }) {
     { id: 'projects', label: 'Projects', icon: '🚀' },
     { id: 'services', label: 'Services', icon: '🛠️' },
     { id: 'certs', label: 'Certs', icon: '🏆' },
+    { id: 'contact', label: 'Contact', icon: '📬' },
     { id: 'social', label: 'Social', icon: '🔗' },
     { id: 'theme', label: 'Theme', icon: '🎨' },
   ];
@@ -706,6 +724,28 @@ export default function MakerPage({ user, onLogout }) {
           <button className={s.addBtn} onClick={() => setTestimonials(p => [...p, mkTes()])}>＋ Add Testimonial</button>
         </Card>
 
+        {/* CONTACT */}
+        <Card id="contact" icon="📬" title="Contact Info">
+          <p className={s.hint} style={{ marginBottom: '1.2rem' }}>These appear in your portfolio's contact section and hero area.</p>
+          <div className={s.row}>
+            <Field label="Email Address">
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="alex@example.com" />
+            </Field>
+            <Field label="WhatsApp Number">
+              <input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+20 123 456 7890" />
+            </Field>
+          </div>
+          <div className={s.row}>
+            <Field label="Resume / CV Link (Google Drive, etc.)">
+              <input value={resumeUrl} onChange={e => setResumeUrl(e.target.value)} placeholder="https://drive.google.com/..." />
+            </Field>
+            <Field label="Upload CV File (PDF/DOC) — included in link">
+              <input type="file" accept=".pdf,.doc,.docx" onChange={onCvUpload} />
+              {cvFile && <small className={s.hint}>Attached: {cvFile.name}</small>}
+            </Field>
+          </div>
+        </Card>
+
         {/* SOCIAL */}
         <Card id="social" icon="🔗" title="Social Links">
           <div className={s.row}>
@@ -780,7 +820,7 @@ export default function MakerPage({ user, onLogout }) {
             <div className={s.resultIcon}>🎉</div>
             <h3>Your Portfolio is Ready!</h3>
             <p>Share this link anywhere — LinkedIn bio, email signature, Twitter, anywhere!</p>
-            <p className={s.hint}>For shorter links, uploaded image/CV files are not embedded. Use URL fields for assets you want visible in shared portfolio.</p>
+            <p className={s.hint}>Your images have been compressed and included in the link below. Note: URLs with images may be quite long.</p>
 
             {shortening ? (
               <div style={{ margin: '1.5rem 0', color: '#a78bfa', fontWeight: 600, animation: 'pulse 1.5s infinite' }}>

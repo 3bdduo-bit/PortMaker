@@ -95,6 +95,7 @@
 .card:hover {
   border-color: var(--accent);
   box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
 }
 
 .sectionTitle {
@@ -223,12 +224,13 @@
   padding: 2.5rem 1.5rem 1.5rem;
   margin-bottom: 1.5rem;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dynItem:hover {
   border-color: var(--accent-bg);
   box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
 }
 
 .featuredItem {
@@ -663,9 +665,21 @@
 }
 
 @media (max-width: 850px) {
-  .navBrand { display: none; }
-  .navLinks { display: none; }
-  .hamburger { display: none; }
-  .navInner { justify-content: center; } /* Center the account/theme on mobile */
-  .navActions { gap: 1.5rem; } /* Give them more room since everything else is gone */
+  .navLinks {
+    display: none;
+  }
+  .navActions > .accountWrap {
+    display: none;
+  }
+  .hamburger {
+    display: flex;
+    z-index: 1001; /* Keep above mobileMenu overlay */
+  }
+  .navInner {
+    padding: 0 1.5rem;
+    justify-content: space-between;
+  }
+  .navBrand {
+    font-size: 1.3rem;
+  }
 }
